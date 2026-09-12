@@ -25,9 +25,10 @@ pub fn build_period_result(
     dates: (String, String, String),
     report_kind: String,
     projects: Vec<ReportHistoryProject>,
-    commit_count: usize,
+    commits: Vec<CommitRecord>,
 ) -> PeriodReportResult {
     let project_count = projects.len();
+    let commit_count = commits.len();
     PeriodReportResult {
         report_text,
         output_file,
@@ -39,6 +40,7 @@ pub fn build_period_result(
         project_count,
         commit_count,
         projects,
+        commits,
     }
 }
 

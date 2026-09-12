@@ -155,6 +155,28 @@ fn enhance_report(
     }
 }
 
+/// Provider-neutral chat entry point for bounded Agent orchestration.
+/// The caller owns protocol validation; this function only reuses credential,
+/// proxy, timeout and provider transport behavior shared with polishing.
+pub fn complete_chat(
+    config: &AiConfig,
+    system_prompt: &str,
+    prompt: &str,
+) -> Result<String, String> {
+    if !config.enabled {
+        return Err("请先启用并配置 AI".to_string());
+    }
+    validate_config(config)?;
+    if config.provider == "codex-oauth" {
+        return crate::codex_oauth::enhance(system_prompt, prompt, &config.model, &config.proxy);
+    }
+    let api_key = read_api_key(config)?;
+    match config.provider.as_str() {
+        "anthropic-native" => enhance_with_anthropic(config, &api_key, prompt, system_prompt),
+        _ => enhance_with_openai_compatible(config, &api_key, prompt, system_prompt),
+    }
+}
+
 fn validate_config(config: &AiConfig) -> Result<(), String> {
     if config.model.trim().is_empty() {
         return Err("未配置 AI 模型名".to_string());

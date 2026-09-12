@@ -77,6 +77,7 @@ export type PeriodReportResult = {
   projectCount: number;
   commitCount: number;
   projects: ReportHistoryProject[];
+  commits?: CommitRecord[];
 };
 export type ReportEnhanceResult = { reportText: string; warnings: string[] };
 export type BlankDayFillResult = { draftText: string; warnings: string[]; itemCount: number; sourceCommitCount: number };

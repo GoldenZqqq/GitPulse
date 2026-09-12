@@ -168,7 +168,7 @@ where
         dates,
         options.report_kind,
         projects,
-        commits.len(),
+        commits,
     ))
 }
 

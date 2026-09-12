@@ -1,16 +1,17 @@
 import { useCallback, useRef, useState } from "react";
 
-export type AppTaskKind = "scan" | "generate" | "polish" | "export" | "interaction";
+export type AppTaskKind = "scan" | "generate" | "polish" | "export" | "interaction" | "agent";
 export type ActiveTaskState = Readonly<Partial<Record<AppTaskKind, string>>>;
 
-const TASK_KINDS: readonly AppTaskKind[] = ["scan", "generate", "polish", "export", "interaction"];
-const STATUS_PRIORITY: readonly AppTaskKind[] = ["generate", "scan", "polish", "export", "interaction"];
+const TASK_KINDS: readonly AppTaskKind[] = ["scan", "generate", "polish", "export", "interaction", "agent"];
+const STATUS_PRIORITY: readonly AppTaskKind[] = ["generate", "scan", "polish", "agent", "export", "interaction"];
 const TASK_CONFLICTS: Record<AppTaskKind, readonly AppTaskKind[]> = {
   scan: ["scan", "generate"],
   generate: TASK_KINDS,
-  polish: ["generate", "polish", "export"],
-  export: ["generate", "polish", "export"],
+  polish: ["generate", "polish", "export", "agent"],
+  export: ["generate", "polish", "export", "agent"],
   interaction: ["generate", "interaction"],
+  agent: ["generate", "polish", "export", "agent"],
 };
 
 type StartTaskResult =

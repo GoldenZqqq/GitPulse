@@ -1,4 +1,5 @@
 export * from "./model/types";
+export * from "./model/report-agent";
 export * from "./model/blank-day-preferences";
 export * from "./model/connections";
 export * from "./model/dates";

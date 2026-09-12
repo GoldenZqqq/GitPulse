@@ -14,6 +14,7 @@ import { useAppRuntime } from "./hooks/useAppRuntime";
 import { useAppSettingsState } from "./hooks/useAppSettingsState";
 import { useReportHistoryStorage } from "./hooks/useReportHistoryStorage";
 import { useReportWorkflow } from "./hooks/useReportWorkflow";
+import { useReportAgent } from "./hooks/useReportAgent";
 import { useSupportEvents } from "./hooks/useSupportEvents";
 import { useWorkspaceHealth } from "./hooks/useWorkspaceHealth";
 import { useWorkspaceDirectoryActions } from "./hooks/useWorkspaceDirectoryActions";
@@ -199,6 +200,10 @@ function App() {
     handleBlankDayGenerated,
     handleBlankDayApply,
   } = reportWorkflow;
+  const reportAgent = useReportAgent({ settings, reportText: previewText,
+    reportIdentity: `${activePreview}|${activeHistoryId}|${dailyDate}|${weeklyWeek}|${monthlyMonth}|${previewText}`,
+    commits: reportWorkflow.agentCommits, history: reportHistory, runTask, setStatus,
+    onReview: reportWorkflow.reviewAgentPatch });
   const workspaceScanning = useWorkspaceScanning({
     settings,
     repos,
@@ -326,7 +331,7 @@ function App() {
     validate = () => validateRequiredSettings(settings),
     allowDuringPolishReview = false,
   }: RunTaskInput): Promise<boolean> {
-    if (polishReview && !allowDuringPolishReview && (kind === "generate" || kind === "polish" || kind === "export")) {
+    if (polishReview && !allowDuringPolishReview && (kind === "generate" || kind === "polish" || kind === "export" || kind === "agent")) {
       setStatus("请先接受或放弃当前 AI 润色结果", { tone: "warning", notify: true });
       return false;
     }
@@ -342,7 +347,7 @@ function App() {
       return false;
     }
     setStatus(label, { tone: "loading", notify: true, duration: 0 });
-    if (kind !== "interaction") setWarnings([]);
+    if (kind !== "interaction" && kind !== "agent") setWarnings([]);
     let succeeded = false;
     try {
       await task();
@@ -442,6 +447,14 @@ function App() {
       )}
 
       <Workbench
+        agent={reportAgent}
+        agentEvidenceCount={reportWorkflow.agentCommits.length}
+        aiModel={settings.aiModel}
+        aiDestination={settings.aiProvider === "codex-oauth" ? "ChatGPT Codex (实验性)" : settings.aiBaseUrl}
+        draftEdited={reportWorkflow.draftEdited}
+        canUndoDraftEdit={reportWorkflow.canUndoDraftEdit}
+        onSaveManualEdit={reportWorkflow.saveManualEdit}
+        onUndoDraftEdit={reportWorkflow.undoDraftEdit}
         repos={repos}
         projectNames={projectNames}
         previewText={previewText}

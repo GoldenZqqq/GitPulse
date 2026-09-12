@@ -1,4 +1,5 @@
 import type { ActiveTaskState } from "../hooks/useTaskActivity";
+import type { ReportAgentController } from "../hooks/useReportAgent";
 import type {
   CommitExtractProgress,
   DateRange,
@@ -12,6 +13,14 @@ import type {
 } from "../model";
 
 export type WorkbenchProps = {
+  agent: ReportAgentController;
+  agentEvidenceCount: number;
+  aiModel: string;
+  aiDestination: string;
+  draftEdited: boolean;
+  canUndoDraftEdit: boolean;
+  onSaveManualEdit: (text: string) => void;
+  onUndoDraftEdit: () => void;
   repos: RepoInfo[];
   previewText: string;
   activePreview: PreviewMode;

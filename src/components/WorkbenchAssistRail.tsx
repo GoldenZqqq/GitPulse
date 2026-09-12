@@ -1,20 +1,21 @@
-import { CheckSquare2, History, Sparkles } from "lucide-react";
+import { CheckSquare2, History, MessageSquare, Sparkles } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import type { WorkbenchProps } from "./Workbench.types";
 import { ReportHistoryPanel } from "./ReportHistoryPanel";
 import { ReportQualityPanel } from "./ReportQualityPanel";
 import { RepositoryPanel } from "./RepositoryPanel";
+import { ReportAgentPanel } from "./ReportAgentPanel";
 
 type Props = {
   workbench: WorkbenchProps;
-  activePanel: "repos" | "history" | "quality";
+  activePanel: "repos" | "history" | "quality" | "agent";
   enabledRepoCount: number;
   hasQualityPanel: boolean;
   isRepoScanning: boolean;
   scanBlocked: boolean;
   generateBlocked: boolean;
   reviewPending: boolean;
-  onPanelChange: (panel: "repos" | "history" | "quality") => void;
+  onPanelChange: (panel: "repos" | "history" | "quality" | "agent") => void;
 };
 
 export function WorkbenchAssistRail({
@@ -33,7 +34,7 @@ export function WorkbenchAssistRail({
     <aside className="assist-rail" aria-label="本次范围">
       <div className="assist-rail-head">
         <div>
-          <h2>本次范围</h2>
+          <h2>{visiblePanel === "agent" ? "报告助手" : "本次范围"}</h2>
         </div>
         <strong>{enabledRepoCount}/{workbench.repos.length}</strong>
       </div>
@@ -41,8 +42,10 @@ export function WorkbenchAssistRail({
         <AssistTab icon={<CheckSquare2 size={14} />} label="范围" meta={`${enabledRepoCount}/${workbench.repos.length}`} panel="repos" visiblePanel={visiblePanel} onPanelChange={onPanelChange} />
         <AssistTab icon={<History size={14} />} label="最近" meta={String(workbench.reportHistory.length)} panel="history" visiblePanel={visiblePanel} onPanelChange={onPanelChange} />
         <AssistTab icon={<Sparkles size={14} />} label="交付" meta={hasQualityPanel ? "可查" : "待生成"} panel="quality" visiblePanel={visiblePanel} disabled={!hasQualityPanel} onPanelChange={onPanelChange} />
+        {workbench.previewText && <AssistTab icon={<MessageSquare size={14} />} label="助手" meta="" panel="agent" visiblePanel={visiblePanel} onPanelChange={onPanelChange} />}
       </div>
-      <div className="assist-panel">
+      <div className={`assist-panel ${visiblePanel === "agent" ? "agent-assist-panel" : ""}`}>
+        {visiblePanel === "agent" && <ReportAgentPanel workbench={workbench} locked={reviewPending} />}
         {visiblePanel === "repos" && (
           <RepositoryPanel
             repos={workbench.repos}

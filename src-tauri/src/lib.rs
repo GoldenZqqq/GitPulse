@@ -1,3 +1,4 @@
+mod agent;
 mod ai;
 mod codex_oauth;
 pub mod commit_pipeline;
@@ -17,9 +18,9 @@ mod workspace_health;
 mod zip_store;
 
 use crate::models::{
-    AiConfig, AiModelInfo, BatchReportOptions, BatchReportResult, BlankDayFillOptions,
-    BlankDayFillResult, DiagnosticOptions, DiagnosticResult, ExtractOptions, ExtractResult,
-    GitIdentity, HeatmapOptions, HeatmapResult, MappingEntry, MonthlyReportOptions,
+    AgentRequest, AgentResponse, AiConfig, AiModelInfo, BatchReportOptions, BatchReportResult,
+    BlankDayFillOptions, BlankDayFillResult, DiagnosticOptions, DiagnosticResult, ExtractOptions,
+    ExtractResult, GitIdentity, HeatmapOptions, HeatmapResult, MappingEntry, MonthlyReportOptions,
     MonthlyReportResult, PeriodReportOptions, PeriodReportResult, ProxyCandidate, ProxyConfig,
     ProxyTestResult, RepoScanProgress, RepoScanResult, ReportEnhanceOptions, ReportEnhanceResult,
     SupportBundleExportResult, SupportBundleOptions, SupportBundlePreview, TrendOptions,
@@ -199,6 +200,13 @@ async fn enhance_report(options: ReportEnhanceOptions) -> Result<ReportEnhanceRe
     async_runtime::spawn_blocking(move || commit_pipeline::enhance_report_sync(options))
         .await
         .map_err(|err| format!("AI 润色任务中断：{}", err))?
+}
+
+#[tauri::command]
+async fn run_report_agent(options: AgentRequest) -> Result<AgentResponse, String> {
+    async_runtime::spawn_blocking(move || agent::run(options))
+        .await
+        .map_err(|err| format!("报告助手任务中断：{}", err))?
 }
 
 #[tauri::command]
@@ -467,6 +475,7 @@ pub fn run() {
             batch_generate_reports,
             open_output_directory,
             enhance_report,
+            run_report_agent,
             fill_blank_day_report,
             list_ai_models,
             run_diagnostics,

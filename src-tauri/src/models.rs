@@ -223,6 +223,89 @@ pub struct AiConfig {
     pub proxy: ProxyConfig,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentMessage {
+    pub role: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentEvidence {
+    pub project_name: String,
+    pub branch_name: String,
+    pub date: String,
+    pub hash: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentHistoryItem {
+    pub title: String,
+    pub period_label: String,
+    pub report_text: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentContext {
+    pub report_text: String,
+    #[serde(default)]
+    pub evidence: Vec<AgentEvidence>,
+    #[serde(default)]
+    pub history: Vec<AgentHistoryItem>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentRequest {
+    pub message: String,
+    #[serde(default)]
+    pub conversation: Vec<AgentMessage>,
+    pub context: AgentContext,
+    pub ai: AiConfig,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentActionKind {
+    Answer,
+    ToolCall,
+    ReportPatch,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentModelOutput {
+    pub kind: AgentActionKind,
+    #[serde(default)]
+    pub text: String,
+    #[serde(default)]
+    pub tool: String,
+    #[serde(default)]
+    pub query: String,
+    #[serde(default)]
+    pub patch: Option<AgentPatch>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentPatch {
+    pub mode: String,
+    pub content: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentResponse {
+    pub answer: String,
+    pub patch: Option<AgentPatch>,
+    pub tool_trace: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiModelInfo {
@@ -551,6 +634,7 @@ pub struct PeriodReportResult {
     pub project_count: usize,
     pub commit_count: usize,
     pub projects: Vec<crate::project_retrospective::ReportHistoryProject>,
+    pub commits: Vec<CommitRecord>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

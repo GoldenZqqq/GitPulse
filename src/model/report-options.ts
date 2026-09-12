@@ -511,7 +511,7 @@ export function validateDateRange(startDate: string, endDate: string) {
   if (startDate > endDate) throw new Error("开始日期不能晚于结束日期");
 }
 
-function buildAiOptions(settings: AppSettings, enabled = settings.aiEnabled) {
+export function buildAiOptions(settings: AppSettings, enabled = settings.aiEnabled) {
   return {
     enabled,
     provider: settings.aiProvider,

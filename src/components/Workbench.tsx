@@ -14,6 +14,7 @@ import { buildEmptyReportAdvice } from "./workbenchAdvice";
 
 export function Workbench(props: WorkbenchProps) {
   const [workbenchView, setWorkbenchView] = useState<WorkbenchView>("report");
+  const [reportEditing, setReportEditing] = useState(false);
   const [emptyAdviceDismissedKey, setEmptyAdviceDismissedKey] = useState("");
   const [heatmapData, setHeatmapData] = useState<HeatmapResult | null>(null);
   const [heatmapLoading, setHeatmapLoading] = useState(false);
@@ -24,7 +25,7 @@ export function Workbench(props: WorkbenchProps) {
   const [trendGranularity, setTrendGranularity] = useState<"weekly" | "monthly">("weekly");
   const isGenerating = taskIsActive(props.activeTasks, "generate");
   const isRepoScanning = taskIsActive(props.activeTasks, "scan");
-  const reviewPending = Boolean(props.polishReview);
+  const reviewPending = Boolean(props.polishReview) || reportEditing;
   const generateBlocked = reviewPending || !taskCanStart(props.activeTasks, "generate");
   const scanBlocked = !taskCanStart(props.activeTasks, "scan");
   const activeTaskStatus = activeTaskLabel(props.activeTasks);
@@ -124,7 +125,7 @@ export function Workbench(props: WorkbenchProps) {
         onViewChange={handleViewChange}
       />
       {workbenchView === "report" ? (
-        <ReportCanvas workbench={props} />
+        <ReportCanvas workbench={props} onEditingChange={setReportEditing} />
       ) : workbenchView === "insights" ? (
         <InsightsView
           heatmapData={heatmapData}

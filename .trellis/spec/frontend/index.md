@@ -25,6 +25,7 @@ The frontend owns state, layout, validation prompts, preview interactions, and T
 | [Configuration Profiles](../tauri-rust/config-profile-io.md) | Versioned shareable config whitelist, preview, and import semantics | Filled |
 | [Privacy-Safe Support Bundle](../tauri-rust/support-bundle.md) | In-memory events, explicit preview confirmation, safe Issue actions, and local ZIP export | Filled |
 | [Project Retrospective Attribution](../tauri-rust/project-retrospective.md) | Cross-layer project history and insights projection contract | Filled |
+| [Report Agent](./report-agent.md) | `useReportAgent` context privacy, volatile conversation, patch acceptance, period picker, and local edit stats invariant | Filled |
 
 ---
 
@@ -38,6 +39,8 @@ The frontend owns state, layout, validation prompts, preview interactions, and T
 - [ ] For configuration-profile work, use the explicit versioned whitelist; never export `AppSettings` by spreading it.
 - [ ] For support-bundle work, keep events memory-only and use only Rust-returned safe summary text for copy and Issue actions.
 - [ ] For desktop startup, responsive, overlay, or CI changes, follow `desktop-quality-gates.md`.
+- [ ] For agent panel, `useReportAgent`, or report editor changes, follow `report-agent.md`; confirm conversation is volatile-only, history is opt-in, and patch acceptance routes through `reviewAgentPatch` without touching the draft directly.
+- [ ] Period picker handlers (`changeWeeklyWeek`, `changeMonthlyMonth`) must never call `resetDraft`; they only stage parameters for the next generation.
 
 ## Quality Check
 

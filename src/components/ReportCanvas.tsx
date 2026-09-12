@@ -9,6 +9,9 @@ import {
   Loader2,
   Maximize2,
   Minimize2,
+  MessageSquare,
+  Pencil,
+  Undo2,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -28,12 +31,15 @@ import { SupplementalItemsEditor } from "./SupplementalItemsEditor";
 import type { WorkbenchProps } from "./Workbench.types";
 import { WorkbenchAssistRail } from "./WorkbenchAssistRail";
 import { MarkdownPreview } from "./MarkdownPreview";
+import { ReportEditor } from "./ReportEditor";
 
-type Props = { workbench: WorkbenchProps };
-type AssistPanel = "repos" | "history" | "quality";
+type Props = { workbench: WorkbenchProps; onEditingChange: (editing: boolean) => void };
+type AssistPanel = "repos" | "history" | "quality" | "agent";
 
-export function ReportCanvas({ workbench: props }: Props) {
+export function ReportCanvas({ workbench: props, onEditingChange }: Props) {
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
   const [customDialogOpen, setCustomDialogOpen] = useState(false);
   const [polishMenuOpen, setPolishMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -52,7 +58,7 @@ export function ReportCanvas({ workbench: props }: Props) {
   const isPolishing = taskIsActive(props.activeTasks, "polish");
   const isExporting = taskIsActive(props.activeTasks, "export");
   const isInteracting = taskIsActive(props.activeTasks, "interaction");
-  const reviewPending = Boolean(props.polishReview);
+  const reviewPending = Boolean(props.polishReview) || isEditing;
   const generateBlocked = reviewPending || !taskCanStart(props.activeTasks, "generate");
   const polishBlocked = reviewPending || !taskCanStart(props.activeTasks, "polish");
   const exportBlocked = reviewPending || !taskCanStart(props.activeTasks, "export");
@@ -88,6 +94,8 @@ export function ReportCanvas({ workbench: props }: Props) {
   const extractProgressText = props.extractProgress && !props.extractProgress.done
     ? `提取中 · ${props.extractProgress.completedRepos}/${props.extractProgress.totalRepos} 仓库 · ${props.extractProgress.commitCount} 提交`
     : activeTaskStatus || props.status;
+
+  useEffect(() => { onEditingChange(isEditing); }, [isEditing, onEditingChange]);
 
   useEffect(() => {
     if (props.polishReview) hadPolishReviewRef.current = true;
@@ -134,7 +142,7 @@ export function ReportCanvas({ workbench: props }: Props) {
   return (
     <>
       {isPreviewExpanded && <div className="canvas-fullscreen-backdrop" aria-hidden="true" onClick={() => setIsPreviewExpanded(false)} />}
-      <div className="studio-grid">
+      <div className={`studio-grid ${activeAssistPanel === "agent" ? "agent-open" : ""}`}>
         <section className={`report-canvas ${isPreviewExpanded ? "preview-expanded" : ""}`} aria-label="报告工作区">
           <div className="canvas-head">
             <div className="canvas-topline">
@@ -172,8 +180,11 @@ export function ReportCanvas({ workbench: props }: Props) {
           </div>
           <div className={`preview-shell ${!isGenerating && (hasReport || props.polishReview) ? "has-report" : "is-empty"}`}>
             {!isGenerating && (hasReport || props.polishReview) && <div className="result-toolbar" aria-label="报告结果操作">
-              <div className="result-summary"><strong>{reportKindLabel}{props.polishReview ? "审核中" : "已生成"}</strong><span>{props.commitCount} 个提交 · {props.projectCount} 个项目</span></div>
+              <div className="result-summary"><strong>{reportKindLabel}{props.polishReview ? "审核中" : props.draftEdited ? " · 已编辑" : "已生成"}</strong><span>{props.commitCount} 个提交 · {props.projectCount} 个项目</span></div>
               <div className="canvas-actions-group">
+                <button ref={editButtonRef} type="button" className="report-tool-icon" title="编辑 Markdown" aria-label="编辑报告" disabled={polishBlocked} onClick={() => setIsEditing(true)}><Pencil size={15} /></button>
+                {props.canUndoDraftEdit && <button type="button" className="report-tool-icon" title="恢复编辑前版本" aria-label="恢复编辑前版本" disabled={polishBlocked} onClick={props.onUndoDraftEdit}><Undo2 size={15} /></button>}
+                <button type="button" className={`report-tool-icon ${activeAssistPanel === "agent" ? "active" : ""}`} title="报告助手" aria-label="打开报告助手" aria-pressed={activeAssistPanel === "agent"} disabled={isEditing} onClick={() => setActiveAssistPanel("agent")}><MessageSquare size={15} /></button>
                 <CopyActions props={props} isInteracting={isInteracting} interactionBlocked={interactionBlocked} copyAsMenuOpen={copyAsMenuOpen} copyMenuButtonRef={copyMenuButtonRef} copyPopoverRef={copyPopoverRef} setCopyAsMenuOpen={setCopyAsMenuOpen} setPolishMenuOpen={setPolishMenuOpen} setExportMenuOpen={setExportMenuOpen} />
                 <PolishActions props={props} isPolishing={isPolishing} polishBlocked={polishBlocked} polishMenuOpen={polishMenuOpen} setPolishMenuOpen={setPolishMenuOpen} setExportMenuOpen={setExportMenuOpen} setCopyAsMenuOpen={setCopyAsMenuOpen} polishExtra={polishExtra} setPolishExtra={setPolishExtra} polishButtonRef={polishButtonRef} polishMenuButtonRef={polishMenuButtonRef} polishPopoverRef={polishPopoverRef} />
                 <ExportActions props={props} isExporting={isExporting} exportBlocked={exportBlocked} exportConfigured={exportConfigured} exportButtonLabel={exportButtonLabel} exportButtonTitle={exportButtonTitle} exportMenuOpen={exportMenuOpen} exportMenuButtonRef={exportMenuButtonRef} exportPopoverRef={exportPopoverRef} setExportMenuOpen={setExportMenuOpen} setPolishMenuOpen={setPolishMenuOpen} setCopyAsMenuOpen={setCopyAsMenuOpen} onExport={handleExport} />
@@ -184,6 +195,8 @@ export function ReportCanvas({ workbench: props }: Props) {
               <ReportPolishReviewPanel review={props.polishReview} accepting={isExporting} onAccept={props.onAcceptPolishReview} onReject={props.onRejectPolishReview} />
             ) : isGenerating ? (
               <div className="preview-loading" role="status" aria-live="polite"><Loader2 className="spin" size={30} /><p>{extractProgressText}</p><button className="preview-generate-button" type="button" disabled>{generateButtonIcon}{generateButtonLabel}</button></div>
+            ) : isEditing ? (
+              <ReportEditor text={props.previewText} onSave={props.onSaveManualEdit} onClose={() => { setIsEditing(false); editButtonRef.current?.focus(); }} />
             ) : hasReport ? (
               <MarkdownPreview markdown={props.previewText} emptyText="" />
             ) : (

@@ -78,6 +78,8 @@ type MockScenario = {
   supportBundleExportError?: string;
   batchResult?: Record<string, unknown>;
   enhanceResult?: Record<string, unknown>;
+  agentResponses?: unknown[];
+  agentError?: string;
   aiModels?: Array<{ id: string; ownedBy?: string }>;
   deferredCommands?: string[];
   updateMetadata?: Record<string, unknown> | null;
@@ -246,6 +248,8 @@ export async function launchApp(page: Page, scenario: MockScenario) {
     supportBundleExportError: scenario.supportBundleExportError,
     batchResult: scenario.batchResult ?? null,
     enhanceResult: scenario.enhanceResult ?? null,
+    agentResponses: scenario.agentResponses ?? [],
+    agentError: scenario.agentError,
     aiModels: scenario.aiModels ?? [],
     deferredCommands: scenario.deferredCommands ?? [],
     updateMetadata: scenario.updateMetadata ?? null,
@@ -268,6 +272,7 @@ export async function launchApp(page: Page, scenario: MockScenario) {
 
       const dialogResponses = [...(state.dialogResponses ?? [])];
       const extractResults = [...(state.extractResults ?? [])];
+      const agentResponses = [...state.agentResponses];
       const deferredCommands = new Set(state.deferredCommands ?? []);
       const deferredResolvers = new Map();
       const releasedCommands = new Set();
@@ -542,6 +547,9 @@ export async function launchApp(page: Page, scenario: MockScenario) {
               return state.batchResult;
             case "enhance_report":
               return state.enhanceResult ?? { reportText: args.options?.baseReport ?? "", warnings: [] };
+            case "run_report_agent":
+              if (state.agentError) throw new Error(state.agentError);
+              return agentResponses.shift() ?? { answer: "当前报告的结论需要结合提交证据核对。", patch: null, toolTrace: ["current_report"] };
             case "run_diagnostics":
               return state.diagnosticsResult;
             case "preview_support_bundle":

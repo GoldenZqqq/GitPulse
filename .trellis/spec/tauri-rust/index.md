@@ -19,6 +19,7 @@ Rust owns local Git scanning, commit extraction, report rendering/export, option
 | [Quality Guidelines](./quality-guidelines.md) | Rust verification and safety rules | Filled |
 | [Desktop Quality Gates](../frontend/desktop-quality-gates.md) | Real Windows WebView startup and IPC smoke contract | Filled |
 | [Release Governance](./release-governance.md) | Main-only source, CI ancestry gate, and draft Release transaction | Filled |
+| [Agent Protocol](./agent-protocol.md) | `run_report_agent` serde contracts, tool-loop design, and privacy enforcement | Filled |
 
 ## Pre-Development Checklist
 
@@ -32,6 +33,7 @@ Rust owns local Git scanning, commit extraction, report rendering/export, option
 - [ ] For configuration-profile work, follow `config-profile-io.md`; keep schema validation in one frontend owner and file I/O bounded in Rust.
 - [ ] For support-bundle work, follow `support-bundle.md`; export must rebuild through Rust redaction and must never upload automatically.
 - [ ] For version, tag, updater, or release workflow changes, follow `release-governance.md`; never build from an unverified branch or publish partial new-release assets.
+- [ ] For `run_report_agent` or agent protocol changes, follow `agent-protocol.md`; verify serde attribute consistency between `AgentActionKind` (snake_case) and `AgentResponse` (camelCase), and confirm the tool loop remains read-only.
 
 ## Quality Check
 
