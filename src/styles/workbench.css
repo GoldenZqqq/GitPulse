@@ -472,8 +472,6 @@ button.generation-scope-item:hover {
 }
 
 .assist-tabs button {
-  display: inline-flex;
-  grid-template-columns: none;
   gap: 5px;
   min-height: 34px;
   padding: 0 7px;

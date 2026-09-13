@@ -16,17 +16,17 @@ export function ReportAgentPanel({ workbench: props, locked }: { workbench: Work
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const blocked = agent.busy || locked || !taskCanStart(props.activeTasks, "agent");
-  useEffect(() => { inputRef.current?.focus(); return () => agent.clear(); }, [agent.clear]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [agent.turns, agent.busy]);
-  useEffect(() => { setConsent(false); setSelection({ evidence: false, historyIds: [] }); }, [props.activeHistoryId, props.aiDestination, props.aiModel, props.redactionEnabled]);
-  function selectContext(next: AgentContextSelection) { setSelection(next); agent.clear(); }
+  useEffect(() => { setConsent(false); }, [props.activeHistoryId, props.aiDestination, props.aiModel]);
+  function selectContext(next: AgentContextSelection) { setSelection(next); }
   async function submit() { if (!consent || blocked || !message.trim()) return; if (await agent.ask(message, selection)) setMessage(""); }
-  if (!props.aiConfigured) return <section className="agent-unconfigured"><MessageSquare size={26} /><h3>报告助手</h3><p>AI 连接待配置</p><button type="button" className="secondary" onClick={props.onOpenSettings}><Settings2 size={15} />配置 AI</button></section>;
+  if (!props.aiConfigured) return <section className="agent-unconfigured"><MessageSquare size={28} /><h3>报告助手</h3><p>配置 AI 服务后，可自动润色、分析和改写报告内容</p><button type="button" onClick={props.onOpenSettings}><Settings2 size={15} />配置 AI</button></section>;
   return <section className="report-agent" aria-label="报告助手对话">
     <header className="agent-header"><span title={props.aiModel}>{props.aiModel}</span><button type="button" className="agent-icon" aria-label="新建对话" title="新建对话" disabled={agent.busy || agent.turns.length === 0} onClick={agent.clear}><Plus size={16} /></button></header>
     <AgentContextControls props={props} selection={selection} disabled={blocked} onChange={selectContext} />
     <div className="agent-log" role="log" aria-label="助手消息" aria-live="polite" tabIndex={0} ref={logRef}>
-      {agent.turns.length === 0 && <div className="agent-empty"><MessageSquare size={24} /><h3>当前报告</h3><span>{props.commitCount} 个提交 · {props.projectCount} 个项目</span><div className="agent-prompts">{["哪些结论还缺少证据？", "精简为三条工作要点", "把当前报告翻译成英文"].map((text) => <button key={text} type="button" onClick={() => { setMessage(text); inputRef.current?.focus(); }}>{text}</button>)}</div></div>}
+      {agent.turns.length === 0 && <div className="agent-empty"><MessageSquare size={28} /><h3>报告助手</h3><span>分析当前 {props.commitCount} 个提交 · {props.projectCount} 个项目</span><div className="agent-prompts">{["哪些结论还缺少证据？", "精简为三条工作要点", "把当前报告翻译成英文"].map((text) => <button key={text} type="button" onClick={() => { setMessage(text); inputRef.current?.focus(); }}>{text}</button>)}</div></div>}
       {agent.turns.map((turn, index) => <article className={`agent-message ${turn.role}`} key={index}>
         <strong>{turn.role === "user" ? "你" : "报告助手"}</strong><div className="agent-message-text">{turn.role === "assistant" ? <MarkdownPreview markdown={turn.content} emptyText="" /> : turn.content}</div>
         {turn.response?.toolTrace.length ? <ul className="agent-tool-trace">{turn.response.toolTrace.map((tool, toolIndex) => <li key={`${tool}:${toolIndex}`}><ShieldCheck size={12} />{TOOL_NAMES[tool]}</li>)}</ul> : null}
@@ -36,7 +36,7 @@ export function ReportAgentPanel({ workbench: props, locked }: { workbench: Work
     </div>
     <form className="agent-composer" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       {agent.error && <p className="agent-error" role="alert">{agent.error}</p>}
-      <label className="agent-consent"><input type="checkbox" checked={consent} disabled={blocked} onChange={(event) => setConsent(event.target.checked)} /><span>向所选 AI 服务发送当前报告与对话</span></label>
+      <label className="agent-consent"><input type="checkbox" checked={consent} disabled={blocked} onChange={(event) => setConsent(event.target.checked)} /><span>同意向所选 AI 服务发送当前报告与对话历史</span></label>
       <label className="sr-only" htmlFor="agent-question">问题或修改要求</label>
       <textarea ref={inputRef} id="agent-question" value={message} disabled={blocked} maxLength={AGENT_MESSAGE_LIMIT} onChange={(event) => setMessage(event.target.value)} placeholder="问题或修改要求" onKeyDown={(event) => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !event.nativeEvent.isComposing) { event.preventDefault(); void submit(); } }} />
       <div className="agent-composer-footer"><span>{message.length}/{AGENT_MESSAGE_LIMIT}</span><button type="submit" aria-label="发送给报告助手" title="发送给报告助手" disabled={blocked || !consent || !message.trim()}><Send size={16} /></button></div>

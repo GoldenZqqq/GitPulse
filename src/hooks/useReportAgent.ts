@@ -24,7 +24,7 @@ export function useReportAgent(params: Params) {
   const epoch = useRef(0);
   const running = useRef(false);
   const clear = useCallback(() => { epoch.current += 1; setTurns([]); setError(""); }, []);
-  const identity = `${params.reportIdentity}|${params.settings.aiProvider}|${params.settings.aiBaseUrl}|${params.settings.aiModel}|${params.settings.aiEnabled}|${params.settings.redactionEnabled}`;
+  const identity = `${params.reportIdentity}|${params.commits.length}|${params.history.map(h => h.id).join(",")}`;
   useEffect(() => { clear(); }, [identity, clear]);
   useEffect(() => () => { epoch.current += 1; }, []);
 
@@ -49,10 +49,14 @@ export function useReportAgent(params: Params) {
         }
         if (requestEpoch !== epoch.current) { params.setStatus("报告助手请求已结束，已丢弃旧上下文结果"); return; }
         completed = true;
-        setTurns((current) => [...current.slice(-10), { role: "user", content: message }, {
-          role: "assistant", content: response.answer || response.patch?.reason || "修改建议已准备",
-          response, sourceText: params.reportText,
-        }]);
+        setTurns((current) => {
+          const userTurn: AgentTurn = { role: "user", content: message };
+          const assistantTurn: AgentTurn = {
+            role: "assistant", content: response.answer || response.patch?.reason || "修改建议已准备",
+            response, sourceText: params.reportText,
+          };
+          return [...current, userTurn, assistantTurn].slice(-10);
+        });
         params.setStatus("报告助手已回复");
       } });
       if (!sent) setError("当前报告任务尚未结束，请稍后重试");
