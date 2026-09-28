@@ -13,17 +13,25 @@ export function ReportAgentPanel({ workbench: props, locked }: { workbench: Work
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const [selection, setSelection] = useState<AgentContextSelection>({ evidence: false, historyIds: [] });
+  const [contextReset, setContextReset] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const blocked = agent.busy || locked || !taskCanStart(props.activeTasks, "agent");
   useEffect(() => { inputRef.current?.focus(); }, []);
   useEffect(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; }, [agent.turns, agent.busy]);
-  useEffect(() => { setConsent(false); }, [props.activeHistoryId, props.aiDestination, props.aiModel]);
-  function selectContext(next: AgentContextSelection) { setSelection(next); }
-  async function submit() { if (!consent || blocked || !message.trim()) return; if (await agent.ask(message, selection)) setMessage(""); }
+  useEffect(() => { setConsent(false); setSelection({ evidence: false, historyIds: [] }); setContextReset(false); }, [props.activeHistoryId, props.aiDestination, props.aiModel, props.redactionEnabled]);
+  // 上下文选择变化即重置会话：否则已取消勾选的历史会随旧对话继续发给模型。
+  function selectContext(next: AgentContextSelection) {
+    const hadTurns = agent.turns.length > 0;
+    setSelection(next);
+    agent.clear();
+    setContextReset(hadTurns);
+  }
+  function clearConversation() { agent.clear(); setContextReset(false); }
+  async function submit() { if (!consent || blocked || !message.trim()) return; if (await agent.ask(message, selection)) { setMessage(""); setContextReset(false); } }
   if (!props.aiConfigured) return <section className="agent-unconfigured"><MessageSquare size={28} /><h3>报告助手</h3><p>配置 AI 服务后，可自动润色、分析和改写报告内容</p><button type="button" onClick={props.onOpenSettings}><Settings2 size={15} />配置 AI</button></section>;
   return <section className="report-agent" aria-label="报告助手对话">
-    <header className="agent-header"><span title={props.aiModel}>{props.aiModel}</span><button type="button" className="agent-icon" aria-label="新建对话" title="新建对话" disabled={agent.busy || agent.turns.length === 0} onClick={agent.clear}><Plus size={16} /></button></header>
+    <header className="agent-header"><span title={props.aiModel}>{props.aiModel}</span><button type="button" className="agent-icon" aria-label="新建对话" title="新建对话" disabled={agent.busy || agent.turns.length === 0} onClick={clearConversation}><Plus size={16} /></button></header>
     <AgentContextControls props={props} selection={selection} disabled={blocked} onChange={selectContext} />
     <div className="agent-log" role="log" aria-label="助手消息" aria-live="polite" tabIndex={0} ref={logRef}>
       {agent.turns.length === 0 && <div className="agent-empty"><MessageSquare size={28} /><h3>报告助手</h3><span>分析当前 {props.commitCount} 个提交 · {props.projectCount} 个项目</span><div className="agent-prompts">{["哪些结论还缺少证据？", "精简为三条工作要点", "把当前报告翻译成英文"].map((text) => <button key={text} type="button" onClick={() => { setMessage(text); inputRef.current?.focus(); }}>{text}</button>)}</div></div>}
@@ -35,6 +43,7 @@ export function ReportAgentPanel({ workbench: props, locked }: { workbench: Work
       {agent.busy && <div className="agent-pending" role="status"><Loader2 size={14} className="spin" />正在处理请求</div>}
     </div>
     <form className="agent-composer" onSubmit={(event) => { event.preventDefault(); void submit(); }}>
+      {contextReset && <p className="agent-context-reset" role="status">上下文选择已变更，已开始新对话</p>}
       {agent.error && <p className="agent-error" role="alert">{agent.error}</p>}
       <label className="agent-consent"><input type="checkbox" checked={consent} disabled={blocked} onChange={(event) => setConsent(event.target.checked)} /><span>同意向所选 AI 服务发送当前报告与对话历史</span></label>
       <label className="sr-only" htmlFor="agent-question">问题或修改要求</label>

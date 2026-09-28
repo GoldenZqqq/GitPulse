@@ -64,6 +64,7 @@
 .agent-composer-footer button { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 999px; color: #fff; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); cursor: pointer; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28); transition: all 0.15s ease; }
 .agent-composer-footer button:hover:not(:disabled) { box-shadow: 0 4px 14px rgba(37, 99, 235, 0.36); transform: translateY(-1px); }
 .agent-composer-footer button:disabled { background: var(--mist); color: var(--muted); cursor: not-allowed; box-shadow: none; }
+.agent-context-reset { margin: 0; padding: 7px 10px; border-radius: var(--radius-sm); background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft); line-height: 1.6; font-size: 11px; }
 .agent-error { margin: 0; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--danger-soft); border: 1px solid var(--danger); color: var(--danger-strong); overflow-wrap: anywhere; line-height: 1.6; font-size: 11.5px; }
 .agent-unconfigured { display: grid; justify-items: start; gap: 14px; padding: 24px 18px; background: var(--paper-soft); border-radius: var(--radius-md); border: 1px solid var(--line); }
 .agent-unconfigured h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }

@@ -42,7 +42,9 @@ function buildReportAgentOptions(
 - `context.evidence` only when `selection.evidence === true`
 - `context.history` only for entries whose `id` appears in `selection.historyIds`
 
-Default `selection` in `ReportAgentPanel` is `{ evidence: false, historyIds: [] }`. Changing the selection clears the displayed conversation (`reset()` is called on selection change).
+Default `selection` in `ReportAgentPanel` is `{ evidence: false, historyIds: [] }`. Changing the selection clears the displayed conversation (`agent.clear()` is called from `selectContext`), because a deselected history entry must not keep traveling inside the already-sent conversation. When a reset actually dropped turns, the composer shows a `role="status"` notice `上下文选择已变更，已开始新对话` so the emptying is explained instead of silent.
+
+The same reset applies whenever the report, AI destination, model, or redaction setting changes: those effects restore the default `selection`, drop `consent`, and hide the notice.
 
 #### Identity dependency resets conversation
 
@@ -84,7 +86,7 @@ localStorage.setItem("agent-turns", JSON.stringify(turns));
 `tests/e2e/report-agent.spec.ts` covers:
 - Default context sends `history: []` and `evidence: []`
 - Explicit history selection sends only the selected entry
-- Uncheck clears conversation (selection-change reset)
+- Uncheck clears conversation (selection-change reset) and surfaces the `上下文选择已变更，已开始新对话` notice
 - Error cases preserve draft text and question input
 - Stale response after report switch is discarded
 - `localStorage` does not contain question text after a round trip

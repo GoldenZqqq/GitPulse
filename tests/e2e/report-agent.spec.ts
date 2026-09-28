@@ -58,7 +58,9 @@ test("only includes explicitly selected historical reports and clears old contex
   await expect(panel).toContainText("当前报告的结论");
   expect((await calls(page))[0].args.options.context.history).toEqual([{ title: other.title, periodLabel: other.periodLabel, reportText: other.reportText }]);
   await panel.getByLabel("周报 · 历史素材").uncheck();
+  await expect(panel.locator(".agent-context-reset")).toHaveText("上下文选择已变更，已开始新对话");
   await expect(panel.getByRole("log")).not.toContainText("比较历史与本次工作");
+  await expect(panel.getByRole("log")).not.toContainText("当前报告的结论");
 });
 
 test("keeps a proposed patch separate until review is accepted and preserves original statistics", async ({ page }) => {

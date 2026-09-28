@@ -24,7 +24,7 @@ export function useReportAgent(params: Params) {
   const epoch = useRef(0);
   const running = useRef(false);
   const clear = useCallback(() => { epoch.current += 1; setTurns([]); setError(""); }, []);
-  const identity = `${params.reportIdentity}|${params.commits.length}|${params.history.map(h => h.id).join(",")}`;
+  const identity = `${params.reportIdentity}|${params.settings.aiProvider}|${params.settings.aiBaseUrl}|${params.settings.aiModel}|${params.settings.aiEnabled}|${params.settings.redactionEnabled}`;
   useEffect(() => { clear(); }, [identity, clear]);
   useEffect(() => () => { epoch.current += 1; }, []);
 
