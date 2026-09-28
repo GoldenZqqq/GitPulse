@@ -119,7 +119,7 @@ Any change to how agent patch results are applied, or how `reviewAgentPatch` int
 ```typescript
 // useReportWorkflow.ts
 function reviewAgentPatch(patch: AgentPatch, sourceText: string): void
-// → calls setPolishReview({ originalText: sourceText, polishedText: patch.content, ... })
+// → calls setPolishReview({ originalText: sourceText, polishedText: patch.content, source: "agent", ... })
 
 function acceptPolishReview(): void
 // → writes to report history store; sets aiEnhanced: true
@@ -130,8 +130,9 @@ function rejectPolishReview(): void
 
 ### 3. Contracts
 
-- `reviewAgentPatch` never directly assigns to the active draft text. It creates a `ReportPolishReview` value and calls `setPolishReview`.
-- The user must explicitly call `acceptPolishReview` (via the "接受润色" button) before the history entry is updated.
+- `reviewAgentPatch` never directly assigns to the active draft text. It creates a `ReportPolishReview` value with `source: "agent"` and calls `setPolishReview`.
+- The review panel is source-aware: for `source: "agent"` it presents the **"修改建议对照"** frame (原文 / 建议稿, "采纳修改" / "放弃修改"); a genuine AI polish (`source: "polish"` or omitted) keeps the "AI 润色对照" copy. Both frames fall back to the same `acceptPolishReview`/`rejectPolishReview` behaviors.
+- The user must explicitly accept before the history entry is updated.
 - `acceptPolishReview` preserves all Git-derived statistics (`commitCount`, `projectCount`, `projects`) from the original entry.
 - Rejecting or navigating away without accepting leaves `reportHistoryStore[0].reportText` unchanged.
 

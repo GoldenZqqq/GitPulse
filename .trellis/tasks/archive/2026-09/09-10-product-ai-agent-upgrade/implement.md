@@ -16,7 +16,7 @@
   - Restored the "selection change resets conversation" contract in `ReportAgentPanel.selectContext`, plus a `role="status"` notice "上下文选择已变更，已开始新对话"; restored `useReportAgent` identity to report + AI-settings; reverted the e2e-red regression.
   - Anthropic `max_tokens` 4096 → 8192 with fallback, added `finish_reason`/`stop_reason` truncation errors, and passed AI provider causes through in `agent.rs`.
 - Known gaps (not blocking task completion, tracked separately):
-  - Local editor and the assistant patch review still use native `window.confirm()`; the assistant patch review surfaces the polish ("AI 润色对照 / 接受润色") copy and polish fact-risk heuristic rather than an assistant-suggestion frame.
+  - Resolved after archiving: the assistant patch review now shows a distinct "修改建议对照 / 采纳修改" frame instead of polish copy, and `ReportEditor` no longer uses native `window.confirm()` (inline confirm instead); the agent context panel dropped its nested scrollbars in favor of a single outer scroller.
   - Period drift: switching period retains the older body while saving/history titles use the new period label.
   - `evidenceByHistory` holds full commit records in memory (default 120 / max 200).
   - Docs (README/CONTEXT/PROGRESS) and `release-notes/v0.8.0.md` are updated in a separate commit; `release-notes/v0.7.2.md` / `v0.7.3.md` are still missing.
