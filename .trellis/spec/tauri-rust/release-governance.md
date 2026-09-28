@@ -38,6 +38,7 @@ stageAndPublishGitHubRelease({ filePaths, githubConfig, releasePayload }) -> rel
 - The tag workflow independently verifies that the tag commit is an `origin/main` ancestor and that the exact SHA has a successful `CI` push run before starting macOS/Linux builds.
 - `GITPULSE_GITHUB_TOKEN` needs `Contents: Read and write` plus `Actions: Read`. Signing material stays in `.release.env.local` or environment variables.
 - Optional CI wait overrides are positive millisecond values: `GITPULSE_RELEASE_CI_TIMEOUT_MS` and `GITPULSE_RELEASE_CI_POLL_MS`.
+- The Linux build job must verify the produced AppImage AppDir before any upload: `.DirIcon` resolves, `.DirIcon` is not an absolute-path symlink, `AppRun` is executable, exactly one root `.desktop` file, and `Categories` is non-empty.
 
 ## 4. Validation & Error Matrix
 
@@ -63,6 +64,7 @@ stageAndPublishGitHubRelease({ filePaths, githubConfig, releasePayload }) -> rel
 ## 6. Tests Required
 
 - `tests/scripts/release-governance.test.mjs`: clean latest main, non-main, stale main, tag ancestry, exact-SHA CI success/failure, draft success, draft cleanup, and exact transaction-tag cleanup.
+- The same test file also locks the Linux packaging contract: `bundle.category` stays configured and `release.yml` keeps the AppImage AppDir self-check (`--appimage-extract`, `.DirIcon`, `bundle.category`).
 - Main CI runs `npm run test:release-governance` as an independent job.
 - Parse both workflow YAML files after edits and assert the release build job depends on `validate`.
 - Release-impacting changes still run frontend build/E2E, Rust fmt/check/test, real Windows WebView smoke, and `git diff --check`.
@@ -102,4 +104,19 @@ No normal new-release path moves an existing tag or publishes a partially upload
 ```text
 gh run view <mac-linux-workflow-id> --json status,conclusion,jobs
 gh release view vX.Y.Z --json assets --jq '.assets[].name'
+```
+
+## AppImage AppDir Contract
+
+**Symptom**: AppImageHub (appimage.github.io) 收录测试报 `FATAL: .DirIcon is missing in /tmp/.mount_xxx`，Linux 桌面集成也拿不到图标。
+
+**Cause**: Tauri CLI `<= 2.11.3` 的 appimage bundler 用**绝对路径**创建 `.DirIcon` 与根 `.desktop` 软链接（指向构建机的 `target/release/bundle/appimage/<Product>.AppDir/...`）。测试脚本用 `[ -e "$APPDIR/.DirIcon" ]` 判断，`-e` 会跟随软链接，悬空链接等于缺失。上游修复见 tauri-apps/tauri#15110 / #15596，`2.11.4` 起改为相对链接。
+
+**Contract**: `@tauri-apps/cli` 必须 `>= 2.11.4`（当前锁 `^2.12.0`）；`tauri.conf.json` 的 `bundle.category` 必须配置，否则 Tauri 生成的 `.desktop` 是 `Categories=`（空），appdir-lint 与 `desktop-file-validate` 会继续挑刺。AppImage 打包后由 `release.yml` 的 `Verify AppImage AppDir` 步骤自检，不通过就不上传资产。
+
+**Validation**:
+
+```text
+npm run test:release-governance
+"<product>.AppImage" --appimage-extract && readlink squashfs-root/.DirIcon   # 必须是相对路径
 ```

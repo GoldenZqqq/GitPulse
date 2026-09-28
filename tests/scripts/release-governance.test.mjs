@@ -251,6 +251,31 @@ test("keeps the workspace benchmark out of default bundles without losing tests"
   );
 });
 
+test("keeps a Linux desktop category so AppImage Categories is never empty", () => {
+  const config = JSON.parse(fs.readFileSync(
+    path.join(rootDir, "src-tauri", "tauri.conf.json"),
+    "utf8",
+  ));
+
+  assert.ok(
+    config.bundle?.category,
+    "bundle.category 必须配置：Tauri 用它生成 Linux .desktop 的 Categories",
+  );
+});
+
+test("keeps the AppImage AppDir self-check in the tag release workflow", () => {
+  const releaseWorkflow = fs.readFileSync(
+    path.join(rootDir, ".github", "workflows", "release.yml"),
+    "utf8",
+  );
+
+  // AppImageHub 的 appdir-lint.sh 会挂载 AppImage 并要求 .DirIcon 可解析。
+  // Tauri CLI <= 2.11.3 生成绝对路径软链接，用户机器上等同缺失。
+  assert.match(releaseWorkflow, /--appimage-extract/);
+  assert.match(releaseWorkflow, /test -e "\$appdir\/\.DirIcon"|\[ ! -e "\$appdir\/\.DirIcon" \]/);
+  assert.match(releaseWorkflow, /bundle\.category/);
+});
+
 function createRepositoryFixture() {
   const root = makeTempDir("gitpulse-release-git-");
   const remote = path.join(root, "origin.git");

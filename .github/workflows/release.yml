@@ -124,6 +124,58 @@ jobs:
       - name: Build app (${{ matrix.label }})
         run: npx tauri build ${{ matrix.build_args }}
 
+      # AppImage 的 AppDir 必须自带可解析的 AppRun 与 .DirIcon（AppImageHub 收录测试
+      # 用 appdir-lint.sh 检查，Linux 桌面集成也依赖它）。Tauri CLI <= 2.11.3 会把
+      # .DirIcon 造成指向构建机绝对路径的软链接，在用户机器上等同于缺失
+      # （tauri-apps/tauri#15110，2.11.4 起修复），因此这里解包自检，坏包不上传。
+      - name: Verify AppImage AppDir
+        if: matrix.os == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          appimage=$(ls src-tauri/target/release/bundle/appimage/*.AppImage 2>/dev/null | head -n 1 || true)
+          if [ -z "$appimage" ]; then
+            echo "::error::未找到 AppImage 产物"
+            exit 1
+          fi
+          appimage=$(readlink -f "$appimage")
+          echo "Verifying $appimage"
+
+          verify_dir=$(mktemp -d)
+          ( cd "$verify_dir" && "$appimage" --appimage-extract >/dev/null )
+          appdir="$verify_dir/squashfs-root"
+
+          if [ ! -x "$appdir/AppRun" ]; then
+            echo "::error::AppDir 缺少可执行的 AppRun"
+            exit 1
+          fi
+
+          if [ ! -e "$appdir/.DirIcon" ]; then
+            echo "::error::.DirIcon 缺失或为悬空软链接（$(readlink "$appdir/.DirIcon" 2>/dev/null || echo '不是软链接')）"
+            exit 1
+          fi
+          dir_icon_target=$(readlink "$appdir/.DirIcon" || true)
+          case "$dir_icon_target" in
+            /*)
+              echo "::error::.DirIcon 指向绝对路径 $dir_icon_target，换台机器就会失效"
+              exit 1
+              ;;
+          esac
+          echo ".DirIcon -> ${dir_icon_target:-<普通文件>}"
+
+          desktop_count=$(ls "$appdir"/*.desktop 2>/dev/null | wc -l || true)
+          if [ "$desktop_count" != "1" ]; then
+            echo "::error::AppDir 根目录必须恰好有一个 .desktop 文件，当前为 $desktop_count 个"
+            exit 1
+          fi
+          if ! grep -q '^Categories=.\+' "$appdir"/*.desktop; then
+            echo "::error::.desktop 的 Categories 为空，请在 tauri.conf.json 配置 bundle.category"
+            exit 1
+          fi
+
+          echo "AppDir 自检通过"
+
       - name: Package macOS app zip
         if: matrix.os == 'macos-14'
         shell: bash

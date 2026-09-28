@@ -150,6 +150,7 @@ macOS 与 Linux 包不在本地构建（Tauri 必须在对应系统上打包）�
 - CI 用基础 `tauri.conf.json` 构建（**不带** `--config tauri.release.conf.json`），不生成 updater 产物，因此**不需要签名私钥、无需配置任何 secret**（仅用默认 `GITHUB_TOKEN` 上传资产）。
 - macOS 包**未签名**：用户首次打开需右键「打开」或执行 `xattr -dr com.apple.quarantine`。
 - **自动更新仅 Windows**：macOS / Linux 不参与 updater，发新版后用户到 Releases 手动下载即可。
+- **AppImage 必须带可解析的 `.DirIcon`**：Tauri CLI `<= 2.11.3` 会把它造成指向构建机绝对路径的软链接（用户机器上等同缺失，AppImageHub 收录测试会报 `FATAL: .DirIcon is missing`）。因此 `@tauri-apps/cli` 锁定 `>= 2.11.4`，`tauri.conf.json` 的 `bundle.category` 保持配置（生成 `.desktop` 的 `Categories`），`release.yml` 中的 `Verify AppImage AppDir` 步骤会在上传前解包自检。
 - 想对**已存在的 tag** 补传 mac/Linux 包：在 GitHub Actions 里手动运行该 workflow（`workflow_dispatch`）并填入对应 tag。
 
 > 修改 `tauri.release.conf.json`、发布脚本或 updater manifest 契约时，必须同步 release-governance 测试、`.github/workflows/release.yml` 与 `.trellis/spec/tauri-rust/release-governance.md`。
