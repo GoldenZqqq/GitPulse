@@ -3,6 +3,15 @@ use reqwest::blocking::Client;
 use serde_json::{json, Value};
 use std::{collections::HashSet, time::Duration};
 
+/// Anthropic 默认输出上限：覆盖主流 Claude 模型的单次输出额度。
+const ANTHROPIC_MAX_TOKENS: u32 = 8_192;
+/// 少数模型只接受 4096（例如 claude-3-haiku 系列），按其报错回退一次。
+const ANTHROPIC_FALLBACK_MAX_TOKENS: u32 = 4_096;
+/// 输出被模型上限截断时必须显式报错：截断的 Markdown / JSON 只会让上层
+/// 误报成"无法识别的结构化结果"，用户也无从知道要缩短报告。
+const TRUNCATED_OUTPUT_ERROR: &str =
+    "AI 输出被截断：已达到该模型的单次输出上限。请缩短报告，或改用输出上限更高的模型后重试。";
+
 pub fn enhance_monthly_report(
     base_report: &str,
     start_date: &str,
@@ -270,9 +279,32 @@ fn enhance_with_anthropic(
     prompt: &str,
     system_prompt: &str,
 ) -> Result<String, String> {
+    // Anthropic 必须显式声明输出上限。4096 对长报告改稿偏小（Agent 侧允许
+    // 20k 字符的 patch），默认使用主流 Claude 模型都接受的 8192；只有模型明确
+    // 拒绝该值时，才回退到历史最小值重试一次。
+    let first = anthropic_messages(config, api_key, prompt, system_prompt, ANTHROPIC_MAX_TOKENS);
+    match first {
+        Err(err) if err.contains("max_tokens") => anthropic_messages(
+            config,
+            api_key,
+            prompt,
+            system_prompt,
+            ANTHROPIC_FALLBACK_MAX_TOKENS,
+        ),
+        other => other,
+    }
+}
+
+fn anthropic_messages(
+    config: &AiConfig,
+    api_key: &str,
+    prompt: &str,
+    system_prompt: &str,
+    max_tokens: u32,
+) -> Result<String, String> {
     let payload = json!({
         "model": config.model,
-        "max_tokens": 4096,
+        "max_tokens": max_tokens,
         "temperature": config.temperature,
         "system": system_prompt,
         "messages": [{ "role": "user", "content": prompt }]
@@ -305,6 +337,9 @@ fn parse_json_response(response: reqwest::blocking::Response) -> Result<Value, S
 }
 
 fn parse_openai_response(response: Value) -> Result<String, String> {
+    if response["choices"][0]["finish_reason"].as_str() == Some("length") {
+        return Err(TRUNCATED_OUTPUT_ERROR.to_string());
+    }
     response["choices"][0]["message"]["content"]
         .as_str()
         .map(str::trim)
@@ -314,6 +349,9 @@ fn parse_openai_response(response: Value) -> Result<String, String> {
 }
 
 fn parse_anthropic_response(response: Value) -> Result<String, String> {
+    if response["stop_reason"].as_str() == Some("max_tokens") {
+        return Err(TRUNCATED_OUTPUT_ERROR.to_string());
+    }
     let blocks = response["content"]
         .as_array()
         .ok_or_else(|| "AI 服务返回内容格式不正确".to_string())?;
@@ -510,6 +548,42 @@ mod tests {
         });
 
         assert_eq!(parse_openai_response(response).unwrap(), "refined report");
+    }
+
+    #[test]
+    fn parse_openai_response_reports_length_truncation() {
+        let response = json!({
+            "choices": [{ "finish_reason": "length", "message": { "content": "half a rep" } }]
+        });
+
+        let err = parse_openai_response(response).unwrap_err();
+
+        assert!(err.contains("输出被截断"), "unexpected error: {err}");
+    }
+
+    #[test]
+    fn parse_anthropic_response_reports_max_tokens_truncation() {
+        let response = json!({
+            "stop_reason": "max_tokens",
+            "content": [{ "type": "text", "text": "half a rep" }]
+        });
+
+        let err = parse_anthropic_response(response).unwrap_err();
+
+        assert!(err.contains("输出被截断"), "unexpected error: {err}");
+    }
+
+    #[test]
+    fn parse_anthropic_response_accepts_normal_stop_reason() {
+        let response = json!({
+            "stop_reason": "end_turn",
+            "content": [{ "type": "text", "text": "complete report" }]
+        });
+
+        assert_eq!(
+            parse_anthropic_response(response).unwrap(),
+            "complete report"
+        );
     }
 
     #[test]

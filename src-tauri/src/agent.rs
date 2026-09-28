@@ -25,7 +25,7 @@ pub fn run(request: AgentRequest) -> Result<AgentResponse, String> {
     config.timeout_seconds = config.timeout_seconds.clamp(1, 60);
     run_with(&request, |prompt| {
         ai::complete_chat(&config, SYSTEM_PROMPT, prompt)
-            .map_err(|_| "报告助手连接失败，请检查 AI 服务、模型和凭据后重试".to_string())
+            .map_err(|failure| format!("报告助手请求失败：{failure}"))
     })
 }
 
