@@ -10,10 +10,16 @@
 
 ## Current Progress
 
-- Completed: additive Agent protocol, provider reuse, read-only tool loop, assistant panel, local editor, initial regression cases.
-- In progress: repair and extend regression coverage, review context privacy and report snapshot consistency.
-- Pending: desktop/theme/keyboard inspection, product review and roadmap, documentation/spec updates, full verification and real WebView smoke.
-- Previous test run: all 11 Agent UI cases stopped in setup because history fixtures omitted required mode/period fields. Correct the fixtures before attributing failures to product behavior.
+- Completed: additive Agent protocol, provider reuse, read-only tool loop, assistant panel, local editor, regression coverage, release-governance tests, AppImage AppDir fix, Anthropic truncation fix.
+- Final verification on `feat/report-agent-workbench`: `npm run build`, `cargo fmt -- --check`, `cargo check --all-targets`, `cargo test` (150 passed), `npm run test:release-governance` (15/15), full e2e `npx playwright test` (110/110), `git diff --check` clean.
+- Post-completion fixes folded in this task:
+  - Restored the "selection change resets conversation" contract in `ReportAgentPanel.selectContext`, plus a `role="status"` notice "上下文选择已变更，已开始新对话"; restored `useReportAgent` identity to report + AI-settings; reverted the e2e-red regression.
+  - Anthropic `max_tokens` 4096 → 8192 with fallback, added `finish_reason`/`stop_reason` truncation errors, and passed AI provider causes through in `agent.rs`.
+- Known gaps (not blocking task completion, tracked separately):
+  - Local editor and the assistant patch review still use native `window.confirm()`; the assistant patch review surfaces the polish ("AI 润色对照 / 接受润色") copy and polish fact-risk heuristic rather than an assistant-suggestion frame.
+  - Period drift: switching period retains the older body while saving/history titles use the new period label.
+  - `evidenceByHistory` holds full commit records in memory (default 120 / max 200).
+  - Docs (README/CONTEXT/PROGRESS) and `release-notes/v0.8.0.md` are updated in a separate commit; `release-notes/v0.7.2.md` / `v0.7.3.md` are still missing.
 
 ## Risky Files
 
