@@ -70,10 +70,12 @@ test("keeps a proposed patch separate until review is accepted and preserves ori
   await expect(page.getByRole("button", { name: "查看修改对照" })).toBeVisible();
   expect(await page.evaluate(() => window.__mockTauri.reportHistoryStore[0].reportText)).toBe(original);
   await page.getByRole("button", { name: "查看修改对照" }).click();
-  const review = page.getByRole("region", { name: "AI 润色对照" });
+  const review = page.getByRole("region", { name: "修改建议对照" });
   await expect(review).toBeVisible();
-  await expect(review.getByRole("region", { name: "原稿", exact: true })).toContainText("补充单元测试");
-  await review.getByRole("button", { name: "接受润色" }).click();
+  await expect(review.getByRole("heading", { name: "修改建议对照" })).toBeVisible();
+  await expect(review.getByRole("region", { name: "原文", exact: true })).toContainText("补充单元测试");
+  await expect(review.getByRole("region", { name: "建议稿", exact: true })).toContainText("并补充单元测试");
+  await review.getByRole("button", { name: "采纳修改" }).click();
   await expect(review).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.__mockTauri.reportHistoryStore[0].reportText)).toBe(revised);
   const stored = await page.evaluate(() => window.__mockTauri.reportHistoryStore);

@@ -8,7 +8,7 @@
 .agent-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--paper-soft); }
 .agent-header > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-soft); font-size: 11px; font-weight: 600; }
 .agent-header .agent-icon { border: 1px solid var(--line); background: var(--paper); }
-.agent-context { flex: 0 0 auto; max-height: 40%; overflow: auto; border-bottom: 1px solid var(--line); background: var(--mist); }
+.agent-context { flex: 0 0 auto; max-height: min(38%, 340px); overflow-y: auto; border-bottom: 1px solid var(--line); background: var(--mist); }
 .agent-context summary { display: flex; align-items: center; gap: 7px; min-height: 38px; cursor: pointer; padding: 8px 14px; font-size: 11.5px; font-weight: 600; transition: background 0.12s ease; }
 .agent-context summary:hover { background: var(--paper-soft); }
 .agent-context summary > span:last-child { margin-left: auto; color: var(--muted); font-size: 10.5px; font-weight: 500; }
@@ -22,8 +22,8 @@
 .agent-context-body fieldset { margin: 0; border: 0; padding: 0; min-width: 0; }
 .agent-context-body legend { padding: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--ink-soft); }
 .agent-context-body p { margin: 0; color: var(--ink-soft); font-size: 11px; line-height: 1.6; }
-.agent-context-body pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 150px; overflow: auto; padding: 10px; border-radius: var(--radius-xs); background: var(--paper); border: 1px solid var(--line); font: 10.5px/1.6 var(--font-mono); }
-.agent-history-options { display: grid; gap: 8px; max-height: 120px; overflow-y: auto; }
+.agent-context-body pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 10px; border-radius: var(--radius-xs); background: var(--paper); border: 1px solid var(--line); font: 10.5px/1.6 var(--font-mono); }
+.agent-history-options { display: grid; gap: 8px; }
 .agent-history-options span { overflow-wrap: anywhere; }
 .agent-log { flex: 1 1 auto; min-height: 100px; overflow-y: auto; overscroll-behavior: contain; padding: 18px 16px; }
 .agent-empty { display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; padding: 32px 20px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--primary-soft) 0%, var(--paper-soft) 100%); border: 1px solid var(--line); }
@@ -79,6 +79,12 @@
 .report-editor-toolbar button:disabled { opacity: .4; cursor: not-allowed; }
 .report-editor textarea { flex: 1; min-height: 140px; width: 100%; resize: none; padding: 20px; border: 0; background: var(--canvas); color: var(--canvas-text); font: 13px/1.85 var(--font-mono); tab-size: 2; }
 .report-editor textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.report-editor-confirm { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--line); background: var(--paper-soft); color: var(--ink); font-size: 12px; }
+.report-editor-confirm-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+.report-editor-confirm-actions button { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper); color: var(--ink-soft); cursor: pointer; font: inherit; font-size: 12px; transition: all 0.15s ease; }
+.report-editor-confirm-actions button:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+.report-editor-confirm-actions .confirm { border-color: var(--primary); color: #fff; background: var(--primary); }
+.report-editor-confirm-actions .confirm:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
 :root[data-theme="dark"] .agent-composer-footer button:not(:disabled) { color: #0e1117; }
 :root[data-theme="dark"] .agent-empty { background: linear-gradient(135deg, rgba(109, 168, 255, 0.12) 0%, var(--paper-soft) 100%); }
 :root[data-theme="dark"] .agent-prompts button { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 0 0 1px var(--line); }

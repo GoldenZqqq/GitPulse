@@ -12,6 +12,7 @@ type Props = {
 
 export function ReportPolishReviewPanel({ review, accepting, onAccept, onReject }: Props) {
   const containerRef = useRef<HTMLElement>(null);
+  const isAgentSuggestion = review.source === "agent";
   const diff = useMemo(
     () => buildReportDiff(review.originalText, review.polishedText),
     [review.originalText, review.polishedText],
@@ -40,31 +41,32 @@ export function ReportPolishReviewPanel({ review, accepting, onAccept, onReject 
       ref={containerRef}
       className="polish-review"
       role="region"
-      aria-label="AI 润色对照"
+      aria-label={isAgentSuggestion ? "修改建议对照" : "AI 润色对照"}
       aria-describedby="polish-review-guidance"
       data-diff-strategy={diff.strategy}
       tabIndex={-1}
     >
-      <ReviewToolbar diff={diff} riskCount={risks.length} accepting={accepting} onAccept={onAccept} onReject={onReject} />
-      <ComparisonColumns originalText={review.originalText} polishedText={review.polishedText} />
-      <FactRiskPanel risks={risks} />
+      <ReviewToolbar diff={diff} riskCount={risks.length} accepting={accepting} onAccept={onAccept} onReject={onReject} isAgentSuggestion={isAgentSuggestion} />
+      <ComparisonColumns originalText={review.originalText} polishedText={review.polishedText} isAgentSuggestion={isAgentSuggestion} />
+      <FactRiskPanel risks={risks} isAgentSuggestion={isAgentSuggestion} />
       <DiffSection lines={diff.lines} strategy={diff.strategy} />
     </section>
   );
 }
 
-function ReviewToolbar({ diff, riskCount, accepting, onAccept, onReject }: {
+function ReviewToolbar({ diff, riskCount, accepting, onAccept, onReject, isAgentSuggestion }: {
   diff: ReturnType<typeof buildReportDiff>;
   riskCount: number;
   accepting: boolean;
   onAccept: () => void;
   onReject: () => void;
+  isAgentSuggestion: boolean;
 }) {
   return (
     <header className="polish-review-toolbar">
       <div>
-        <h3>AI 润色对照</h3>
-        <p id="polish-review-guidance">原稿尚未被覆盖。请核对改动与事实提示后再决定是否接受。</p>
+        <h3>{isAgentSuggestion ? "修改建议对照" : "AI 润色对照"}</h3>
+        <p id="polish-review-guidance">{isAgentSuggestion ? "原稿尚未被覆盖。请核对建议改动后再决定是否采用。" : "原稿尚未被覆盖。请核对改动与事实提示后再决定是否接受。"}</p>
       </div>
       <div className="polish-review-summary" aria-label="改动统计">
         <span className="added">+{diff.added} 新增</span>
@@ -74,22 +76,24 @@ function ReviewToolbar({ diff, riskCount, accepting, onAccept, onReject }: {
       </div>
       <div className="polish-review-actions">
         <button type="button" className="polish-review-reject" disabled={accepting} onClick={onReject}>
-          <RotateCcw size={14} /> 保留原稿
+          <RotateCcw size={14} /> {isAgentSuggestion ? "放弃修改" : "保留原稿"}
         </button>
         <button type="button" className="polish-review-accept" disabled={accepting} onClick={onAccept}>
           {accepting ? <Loader2 className="spin" size={14} /> : <Check size={14} />}
-          {accepting ? "正在接受" : "接受润色"}
+          {accepting ? (isAgentSuggestion ? "正在采纳" : "正在接受") : (isAgentSuggestion ? "采纳修改" : "接受润色")}
         </button>
       </div>
     </header>
   );
 }
 
-function ComparisonColumns({ originalText, polishedText }: { originalText: string; polishedText: string }) {
+function ComparisonColumns({ originalText, polishedText, isAgentSuggestion }: { originalText: string; polishedText: string; isAgentSuggestion: boolean }) {
+  const originalLabel = isAgentSuggestion ? "原文" : "原稿";
+  const polishedLabel = isAgentSuggestion ? "建议稿" : "润色稿";
   return (
     <div className="polish-review-columns">
-      <section role="region" aria-label="原稿"><h4>原稿</h4><pre>{originalText}</pre></section>
-      <section role="region" aria-label="润色稿"><h4>润色稿</h4><pre>{polishedText}</pre></section>
+      <section role="region" aria-label={originalLabel}><h4>{originalLabel}</h4><pre>{originalText}</pre></section>
+      <section role="region" aria-label={polishedLabel}><h4>{polishedLabel}</h4><pre>{polishedText}</pre></section>
     </div>
   );
 }
@@ -116,14 +120,14 @@ function DiffSection({
   );
 }
 
-function FactRiskPanel({ risks }: { risks: ReturnType<typeof detectPolishFactRisks> }) {
+function FactRiskPanel({ risks, isAgentSuggestion }: { risks: ReturnType<typeof detectPolishFactRisks>; isAgentSuggestion: boolean }) {
   return (
     <section className={`polish-risk-panel ${risks.length > 0 ? "has-risks" : "is-clear"}`} aria-label="事实风险提示">
       <div>
         <AlertTriangle size={15} />
         <strong>启发式风险提示，不等于事实错误</strong>
       </div>
-      <p>请结合提交证据、用户补充事项与实际结果人工核对；系统不会自动删除或修改润色稿。</p>
+      <p>{isAgentSuggestion ? "请结合提交证据与实际结果人工核对；系统不会自动应用建议稿。" : "请结合提交证据、用户补充事项与实际结果人工核对；系统不会自动删除或修改润色稿。"}</p>
       {risks.length > 0 ? (
         <ul>
           {risks.map((risk) => (

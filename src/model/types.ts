@@ -128,6 +128,8 @@ export type ReportPolishReview = {
   projectCount: number;
   supplementalItems: string[];
   projects?: ReportHistoryProject[];
+  /** 区分真正的 AI 润色与报告助手的修改建议，驱动审阅面板文案。默认 "polish"。 */
+  source?: "polish" | "agent";
 };
 export type UpdateSummary = { currentVersion: string; version: string; notes: string; date?: string };
 export type GitIdentity = { userName: string; userEmail: string };

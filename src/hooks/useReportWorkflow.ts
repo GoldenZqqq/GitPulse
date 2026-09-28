@@ -258,18 +258,19 @@ export function useReportWorkflow({
       const supplementalItems = supplementalItemsFor(activePreview, range); const result = await invoke<ReportEnhanceResult>("enhance_report", { options: buildReportEnhanceOptions(settings, activePreview, range, baseReport, extraInstruction, supplementalItems) }); setWarnings(result.warnings);
       if (hasAiWarning(result.warnings)) { setStatus("AI 润色失败，已保留当前报告"); return; }
       reviewEvidence.current = evidence;
-      setPolishReview({ mode: activePreview, range, periodLabel, originalText: baseReport, polishedText: result.reportText, warnings: result.warnings, repoCount: sourceRepoCount, commitCount, projectCount, supplementalItems, projects: sourceHistory?.projects }); setStatus("AI 润色完成，请对照确认");
+      setPolishReview({ mode: activePreview, range, periodLabel, originalText: baseReport, polishedText: result.reportText, warnings: result.warnings, repoCount: sourceRepoCount, commitCount, projectCount, supplementalItems, projects: sourceHistory?.projects, source: "polish" }); setStatus("AI 润色完成，请对照确认");
     }, validate: () => { if (!baseReport.trim()) throw new Error("当前报告为空，请先生成报告再润色"); validateAiConnectionSettings(settings); validateOutputSettings(settings); supplementalItemsFor(activePreview, range); }});
   }
 
   async function acceptPolishReview() {
     if (!polishReview) return; const review = polishReview;
-    await runTask({ kind: "export", label: "正在接受 AI 润色结果", task: async () => {
+    const isAgentSuggestion = review.source === "agent";
+    await runTask({ kind: "export", label: isAgentSuggestion ? "正在采纳助手修改" : "正在接受 AI 润色结果", task: async () => {
       const outputFile = await saveActivePreviewText(review.mode, review.range, review.periodLabel, review.polishedText); setActivePreviewText(review.mode, review.polishedText); setActivePreview(review.mode); setWarnings(review.warnings); setLastOutputFile(outputFile);
-      rememberHistory({ ...buildHistoryEntry({ mode: review.mode, range: review.range, periodLabel: review.periodLabel, reportText: review.polishedText, commitCount: review.commitCount, projectCount: review.projectCount, aiEnhanced: true, outputFile, supplementalItems: review.supplementalItems, projects: review.projects }), repoCount: review.repoCount }, reviewEvidence.current); reviewEvidence.current = []; setPolishReview(null); setStatus("已接受 AI 润色结果");
+      rememberHistory({ ...buildHistoryEntry({ mode: review.mode, range: review.range, periodLabel: review.periodLabel, reportText: review.polishedText, commitCount: review.commitCount, projectCount: review.projectCount, aiEnhanced: true, outputFile, supplementalItems: review.supplementalItems, projects: review.projects }), repoCount: review.repoCount }, reviewEvidence.current); reviewEvidence.current = []; setPolishReview(null); setStatus(isAgentSuggestion ? "已采纳助手修改" : "已接受 AI 润色结果");
     }, validate: () => { if (settings.outputEnabled) validateOutputSettings(settings); }, allowDuringPolishReview: true });
   }
-  function rejectPolishReview() { if (polishReview) { reviewEvidence.current = []; setPolishReview(null); setStatus("已保留原稿"); } }
+  function rejectPolishReview() { if (polishReview) { reviewEvidence.current = []; setPolishReview(null); setStatus(polishReview.source === "agent" ? "已放弃助手修改" : "已保留原稿"); } }
 
   function reviewAgentPatch(patch: AgentPatch, sourceText: string) {
     if (polishReview || sourceText !== previewText) {
@@ -283,7 +284,7 @@ export function useReportWorkflow({
       setPolishReview({ mode: source.mode, range: source.range, periodLabel: source.periodLabel,
         originalText: sourceText, polishedText, warnings: [],
         repoCount: source.repoCount, commitCount: source.commitCount, projectCount: source.projectCount ?? source.repoCount,
-        supplementalItems: source.supplementalItems ?? [], projects: source.projects });
+        supplementalItems: source.supplementalItems ?? [], projects: source.projects, source: "agent" });
       setStatus("助手修改已准备，请对照确认");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error), { tone: "error", notify: true });
