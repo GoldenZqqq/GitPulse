@@ -32,6 +32,18 @@ _Avoid_: raw output, summary text
 An optional rewriting step that improves a report draft without inventing unsupported outcomes. AI polishing may fail without blocking local report generation.
 _Avoid_: AI generation, cloud report
 
+**Report Assistant**:
+A conversational, read-only tool in the report sidebar that answers questions about the current report and offers change suggestions. It reads the current report, optional commit evidence, and only explicitly selected historical reports through read-only tools; it never writes the report itself and never accesses files, terminals, or network beyond the configured AI provider. Its output is advisory.
+_Avoid_: AI report generator, auto-rewriter, chatbot that saves files
+
+**Report Patch**:
+A proposed replacement or addition to the report produced by the Report Assistant. A patch changes nothing until the user opens the review comparison and explicitly accepts it; accepting applies it to the working report text, rejecting or editing leaves the original untouched.
+_Avoid_: AI-saved result, auto-applied edit
+
+**Local Editing**:
+Direct Markdown editing of a report without any AI step. Saving marks the report as edited; the editor can reset the current edit or restore the pre-edit version until replaced.
+_Avoid_: AI rewrite, polish mode
+
 **Project Name Mapping**:
 A user-maintained rule that turns repository and branch names into a display name for reports. A mapping can target one branch or all branches of a repository.
 _Avoid_: alias, rename rule
@@ -74,7 +86,13 @@ _Avoid_: diagnostic attachment, full log, uploaded report
 In product language, use **Blank Day Fill** for the feature and **Continuity Draft** for its output. Do not market it as inventing work with no historical basis.
 
 **AI generation vs polishing**:
-Keep **AI Polishing** for rewrite-only of an existing report draft. Use **Blank Day Fill** when AI creates a continuity draft from historical commit themes for a low-activity target day.
+Keep **AI Polishing** for rewrite-only of an existing report draft. Use **Blank Day Fill** when AI creates a continuity draft from historical commit themes for a low-activity target day. For the sidebar conversation, use **Report Assistant**; its change suggestions are **Report Patches**, which are proposals applied only on explicit accept.
+
+**Report Assistant vs AI Polishing**:
+Both are optional and share the AI configuration, but differ in intent: AI Polishing rewrites the whole draft on demand; the Report Assistant answers questions and may propose **Report Patches** that the user reviews before applying. Never describe assistant output as an automatically applied polish.
+
+**Assistant context selection**:
+The assistant sends only the current report plus what is explicitly checked — commit evidence and selected historical reports. Changing the selection resets the conversation because a deselected history entry must not keep traveling inside an already-sent conversation.
 
 **Project**:
 In product language, prefer **Repository** for a local Git source and **Project Name Mapping** for the display name shown in a report. Use "project" only in user-facing prose where it naturally means the work area represented by commits.

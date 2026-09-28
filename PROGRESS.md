@@ -26,6 +26,12 @@ GitPulse is already usable as a local-first desktop report generator. P0 reliabi
 - [x] Add user-facing diagnostics for missing Git, invalid output directories, and missing environment variables.
 - [x] Add a production Tauri CSP instead of disabling CSP.
 - [x] Move ChatGPT Codex OAuth login state to the OS credential store with legacy JSON migration.
+- [x] Add the Report Assistant: a read-only conversational tool (`run_report_agent`) with bounded context, a bounded tool loop over current report / commit evidence / explicitly selected history, and report patches routed through a review comparison before acceptance.
+- [x] Add local Markdown editing of reports with reset / restore-pre-edit controls and an "已编辑" marker.
+- [x] Add context privacy for the assistant: evidence and history are opt-in, selection changes reset the conversation with a `role="status"` notice, and conversation stays volatile (never persisted).
+- [x] Upgrade the period picker to calendar / month-grid popovers for daily, weekly, and monthly previews.
+- [x] Fix the AppImage `.DirIcon` absolute symlink (Tauri CLI 2.11.2 → 2.12.0), add `bundle.category`, and a release workflow check that verifies the AppDir contract.
+- [x] Fix Anthropic truncation: raise `max_tokens` with a fallback, surface `stop_reason`/`finish_reason` truncation as a readable error, and pass AI provider error causes through instead of hiding them behind "连接失败".
 
 ## Verification
 
